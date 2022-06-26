@@ -69,7 +69,8 @@
                     (not (@local-symbols node))
                     ;; probably the ugliest hack of them all, to get
                     ;; rid of java classes
-                    (not (= java.lang.Class (type (resolve node)))))
+                    (not (= java.lang.Class (type (resolve node))))
+                    (not (= java.lang.Class (some-> (namespace node) symbol resolve type))))
            (register node))
          node)
        data))

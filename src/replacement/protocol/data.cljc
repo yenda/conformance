@@ -17,6 +17,18 @@
   (s/and symbol?
          #(= 'def %)))
 
+(s/def ::try-sym
+  (s/and symbol?
+         #(= 'try %)))
+
+(s/def ::catch-sym
+  (s/and symbol?
+         #(= 'catch %)))
+
+(s/def ::finally-sym
+  (s/and symbol?
+         #(= 'finally %)))
+
 (s/def ::reify-sym
   (s/and symbol?
          #(= 'reify %)))
@@ -293,15 +305,29 @@
 
 (s/def ::dot-form
   (s/cat
-    :dot ::dot-sym
-    :classname symbol?
-    :method+args (s/alt :method symbol?
-                        :method+args (s/cat :method symbol?
-                                            :args* (s/* ::form))
-                        :method+args-sexp (s/or :method symbol?
-                                                :method+args (s/cat :method symbol?
-                                                                    :args* (s/* ::form))))
-    ))
+   :dot ::dot-sym
+   :classname symbol?
+   :method+args (s/alt :method symbol?
+                       :method+args (s/cat :method symbol?
+                                           :args* (s/* ::form))
+                       :method+args-sexp (s/or :method symbol?
+                                               :method+args (s/cat :method symbol?
+                                                                   :args* (s/* ::form))))))
+
+(s/def ::catch-form
+  (s/cat
+   :catch ::catch-sym
+   :handled symbol?
+   :binding ::binding
+   :body (s/* ::form)))
+
+(s/def ::try-catch-form
+  (s/cat
+   :try ::try-sym
+   :body (s/* ::form)
+   :catch* (s/+ (s/spec ::catch-form))
+   :finally? (s/? (s/cat :finally ::finally-sym
+                         :body (s/* ::form)))))
 
 (s/def ::form
   (s/or :ns ::ns-form
@@ -314,6 +340,7 @@
         :java-call ::java-call
         :java-class ::java-class
         :java-type ::java-type
+        :try-catch ::try-catch-form
         :defmacro ::defmacro-form
         :loop ::loop-form
         :dotimes ::dotimes-form
@@ -326,6 +353,7 @@
         :if-some ::if-some-form
         :when-some-form ::when-some-form
         :expr (s/+ ::form)
+        :nil nil?
         :any any?))
 
 (s/def ::text ::minimal-string)

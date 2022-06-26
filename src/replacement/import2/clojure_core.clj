@@ -30,7 +30,8 @@
 ;; (load "gvec")
 
 (def syms
-  '#{case*
+  '#{let*
+     case*
      BlockingQueue
      satisfies?
      Class
