@@ -3,6 +3,7 @@
             #?(:clj  [clojure.core.specs.alpha :as core-specs]
                :cljs [replacement.protocol.cljs-fn-specs :as core-specs])
             [clojure.spec.test.alpha :as stest]
+            [clojure.set :as set]
             [clojure.string :as string]
             [replacement.protocol.patched-core-specs]))
 
@@ -81,6 +82,11 @@
   (s/and symbol?
          #(= 'if-some %)))
 
+(s/def ::require-sym
+  (s/and symbol?
+         #(= 'require %)))
+
+
 (s/def ::minimal-string
   (s/and string? #(not (string/blank? %))))
 
@@ -105,6 +111,7 @@
         :when-let ::when-let-sym
         :if-some ::if-some-sym
         :when-some ::when-some-sym
+        :require ::require-sym
         :other symbol?))
 
 (s/def ::binding-form
@@ -132,47 +139,47 @@
 
 (s/def ::loop-form
   (s/cat
-   :loop ::loop-sym
-   :loop-args (s/cat :bindings ::bindings
-                     :body (s/* ::form))))
+    :loop ::loop-sym
+    :loop-args (s/cat :bindings ::bindings
+                      :body (s/* ::form))))
 
 (s/def ::dotimes-form
   (s/cat
-   :dotimes ::dotimes-sym
-   :dotimes-args (s/cat :bindings ::bindings
-                        :body (s/* ::form))))
+    :dotimes ::dotimes-sym
+    :dotimes-args (s/cat :bindings ::bindings
+                         :body (s/* ::form))))
 
 (s/def ::for-form
   (s/cat
-   :for ::for-sym
-   :for-args (s/cat :bindings ::bindings
-                    :body (s/* ::form))))
+    :for ::for-sym
+    :for-args (s/cat :bindings ::bindings
+                     :body (s/* ::form))))
 
 (s/def ::doseq-form
   (s/cat
-   :doseq ::doseq-sym
-   :doseq-args (s/cat :bindings ::bindings
-                      :body (s/* ::form))))
+    :doseq ::doseq-sym
+    :doseq-args (s/cat :bindings ::bindings
+                       :body (s/* ::form))))
 
 (s/def ::with-open-form
   (s/cat
-   :with-open ::with-open-sym
-   :with-open-args (s/cat :bindings ::bindings
-                          :body (s/* ::form))))
+    :with-open ::with-open-sym
+    :with-open-args (s/cat :bindings ::bindings
+                           :body (s/* ::form))))
 
 (s/def ::let-form
   (s/cat
-   :let ::let-sym
-   :let-args (s/cat :bindings ::bindings
-                    :body (s/* ::form))))
+    :let ::let-sym
+    :let-args (s/cat :bindings ::bindings
+                     :body (s/* ::form))))
 
 (s/def ::if-let-form
   (s/cat
-   :if-let ::if-let-sym
-   :if-let-args (s/cat
-                 :bindings (s/and vector? ::binding)
-                 :then ::form
-                 :else (s/? ::form))))
+    :if-let ::if-let-sym
+    :if-let-args (s/cat
+                   :bindings (s/and vector? ::binding)
+                   :then ::form
+                   :else (s/? ::form))))
 
 (s/def ::when-let-form
   (s/cat :when-let ::when-let-sym
@@ -181,11 +188,11 @@
 
 (s/def ::if-some-form
   (s/cat
-   :if-some ::if-some-sym
-   :if-some-args (s/cat
-                  :bindings (s/and vector? ::binding)
-                  :then ::form
-                  :else (s/? ::form))))
+    :if-some ::if-some-sym
+    :if-some-args (s/cat
+                    :bindings (s/and vector? ::binding)
+                    :then ::form
+                    :else (s/? ::form))))
 
 (s/def ::when-some-form
   (s/cat :when-some ::when-some-sym
@@ -194,8 +201,8 @@
 
 (s/def ::ns-form
   (s/cat
-   :ns ::ns-sym
-   :ns-args ::core-specs/ns-form))
+    :ns ::ns-sym
+    :ns-args ::core-specs/ns-form))
 
 (s/def ::params+body
   (s/cat :params ::core-specs/param-list
@@ -220,25 +227,25 @@
                                          :attr-map (s/? map?)))))
 (s/def ::defn-form
   (s/cat
-   :defn-type ::defn-sym
-   :defn-args ::defn-args))
+    :defn-type ::defn-sym
+    :defn-args ::defn-args))
 
 (s/def ::fn-form
   (s/cat
-   :defn-type ::fn-sym
-   :defn-args ::fn-args))
+    :defn-type ::fn-sym
+    :defn-args ::fn-args))
 
 (s/def ::defmacro-form
   (s/cat
-   :defn-type ::defmacro-sym
-   :defn-args ::defn-args))
+    :defn-type ::defmacro-sym
+    :defn-args ::defn-args))
 
 (s/def ::def-form
   (s/cat
-   :def ::def-sym
-   :var-name symbol?
-   :docstring (s/? string?)
-   :init-expr (s/+ any?)))
+    :def ::def-sym
+    :var-name symbol?
+    :docstring (s/? string?)
+    :init-expr (s/+ any?)))
 
 (s/def ::protocol-impl
   (s/cat :method symbol?
@@ -247,8 +254,34 @@
 
 (s/def ::reify-form
   (s/cat :reify ::reify-sym
-         :reify-args (s/+ (s/cat :protocol symbol?
-                                 :impl (s/and list? ::protocol-impl)))))
+         :reify-args (s/* (s/or :protocol symbol?
+                                :impl (s/* ::protocol-impl)))))
+
+(s/def ::require-form
+  (s/cat :require ::require-sym
+         :args (s/+ (s/alt :libspec ::core-specs/libspec
+                           :prefix-list ::core-specs/prefix-list
+                           :flag #{:reload :reload-all :verbose}))))
+
+(s/def ::java-call
+  (s/and list?
+         (s/cat :method (s/and symbol?
+                               ;; need a better discriminator cos this gets called too much
+                               #(class? (some-> (namespace %)
+                                                symbol
+                                                resolve)))
+                :args (s/* any?))))
+
+(s/def ::java-class (s/and symbol?
+                           #(class? %)))
+
+(def primitives-string-names
+  (set/map-invert primitives-classnames))
+
+(s/def ::java-type (s/and symbol?
+                          #(primitives-string-names (str %))))
+
+;(s/def ::java-value #(type %))
 
 ;; [ ] (. instance-expr member-symbol)
 ;; [x] (. Classname-symbol member-symbol)
@@ -260,15 +293,15 @@
 
 (s/def ::dot-form
   (s/cat
-   :dot ::dot-sym
-   :classname symbol?
-   :method+args (s/alt :method symbol?
-                       :method+args (s/cat :method symbol?
-                                           :args* (s/* ::form))
-                       :method+args-sexp (s/or :method symbol?
-                                               :method+args (s/cat :method symbol?
-                                                                   :args* (s/* ::form))))
-   ))
+    :dot ::dot-sym
+    :classname symbol?
+    :method+args (s/alt :method symbol?
+                        :method+args (s/cat :method symbol?
+                                            :args* (s/* ::form))
+                        :method+args-sexp (s/or :method symbol?
+                                                :method+args (s/cat :method symbol?
+                                                                    :args* (s/* ::form))))
+    ))
 
 (s/def ::form
   (s/or :ns ::ns-form
@@ -277,6 +310,10 @@
         :dot-form ::dot-form
         :fn ::fn-form
         :reify ::reify-form
+        :require ::require-form
+        :java-call ::java-call
+        :java-class ::java-class
+        :java-type ::java-type
         :defmacro ::defmacro-form
         :loop ::loop-form
         :dotimes ::dotimes-form
