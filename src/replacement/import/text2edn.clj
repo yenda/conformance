@@ -1,8 +1,12 @@
 (ns replacement.import.text2edn
   (:require [clojure.spec.alpha :as s]
+            [malli.core :as m]
+            [replacement.import2.data :as data]
             [replacement.protocol.data :as spec-data])
   (:import (clojure.lang LineNumberingPushbackReader)
            (java.io StringReader)))
+
+(def malli? true)
 
 (defmacro with-read-known
   "Evaluates body with *read-eval* set to a \"known\" value,
@@ -28,13 +32,21 @@
   "Obtain the conformed and unformed versions of the given form or explain-data for its non-conformance."
   [form]
   (try
-    (let [pre-check (s/valid? ::spec-data/form form)
-          conformed (and pre-check (s/conform ::spec-data/form form))]
+    (let [pre-check (if malli?
+                      (m/validate ::data/form form)
+                      (s/valid? ::spec-data/form form))
+          conformed (and pre-check (if malli?
+                                     (m/parse ::data/form form)
+                                     (s/conform ::spec-data/form form)))]
       (cond-> {}
         pre-check (assoc :form form
                          :conformed conformed
-                         :unformed (s/unform ::spec-data/form conformed))
-        (not pre-check) (assoc :explain (s/explain-data ::spec-data/form form))))
+                         :unformed (if malli?
+                                     (m/unparse ::data/form conformed)
+                                     (s/unform ::spec-data/form conformed)))
+        (not pre-check) (assoc :explain (if malli?
+                                          (m/explain ::data/form form)
+                                          (s/explain-data ::spec-data/form form)))))
     (catch Exception e
       (println form)
       (throw e))))
