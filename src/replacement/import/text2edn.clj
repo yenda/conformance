@@ -32,21 +32,21 @@
   "Obtain the conformed and unformed versions of the given form or explain-data for its non-conformance."
   [form]
   (try
-    (let [pre-check (if malli?
-                      (m/validate ::data/form form)
-                      (s/valid? ::spec-data/form form))
-          conformed (and pre-check (if malli?
-                                     (m/parse ::data/form form)
-                                     (s/conform ::spec-data/form form)))]
+    (let [conformed (if malli?
+                      (data/form-parser form)
+                      (s/conform ::spec-data/form form))
+          ;;TODO define what's invalid
+          ;;could be when first item is :any?
+          valid? true]
       (cond-> {}
-        pre-check (assoc :form form
-                         :conformed conformed
-                         :unformed (if malli?
-                                     (m/unparse ::data/form conformed)
-                                     (s/unform ::spec-data/form conformed)))
-        (not pre-check) (assoc :explain (if malli?
-                                          (m/explain ::data/form form)
-                                          (s/explain-data ::spec-data/form form)))))
+        valid? (assoc :form form
+                      :conformed conformed
+                      :unformed (if malli?
+                                  (data/form-unparser conformed)
+                                  (s/unform ::spec-data/form conformed)))
+        (not valid?) (assoc :explain (if malli?
+                                       (m/explain ::data/form form)
+                                       (s/explain-data ::spec-data/form form)))))
     (catch Exception e
       (println form)
       (throw e))))

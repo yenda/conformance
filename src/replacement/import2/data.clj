@@ -564,3 +564,7 @@
 
 (mr/set-default-registry!
  (mr/mutable-registry registry*))
+
+(def form-parser (m/parser ::form))
+(def form-unparser (m/unparser ::form))
+(def Form (m/schema ::form))
