@@ -6,7 +6,8 @@
            commons-codec/commons-codec {:mvn/version "1.15"}
            com.xtdb/xtdb-core          {:mvn/version "1.21.0"}
            com.xtdb/xtdb-rocksdb       {:mvn/version "1.21.0"}
-           funcool/promesa             {:mvn/version "8.0.446"}}
+           funcool/promesa             {:mvn/version "8.0.446"}
+           metosin/malli {:mvn/version "0.8.8"}}
 
  :aliases {:cljs     {:extra-deps {org.clojure/clojurescript {:mvn/version "1.10.844"}}}
 
@@ -20,4 +21,3 @@
            }
 
  }
-
