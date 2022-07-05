@@ -514,8 +514,12 @@
                ::try-catch-form
                [:catn
                 [:try ::try-sym]
-                [:body [:* [:schema [:ref ::form]]]]
-                [:catch* [:+ ::catch-form]]
+                [:body [:* [:and
+                            ;; NOTE: seemed like the only way to prevent body
+                            ;; from consuming the catch forms
+                            [:not ::catch-form]
+                            [:schema [:ref ::form]]]]]
+                [:catch* [:+ [:schema ::catch-form]]]
                 [:finally? [:? [:catn
                                 [:finally ::finally-sym]
                                 [:body [:* [:schema [:ref ::form]]]]]]]]
