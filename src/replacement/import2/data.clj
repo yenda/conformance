@@ -567,4 +567,5 @@
 
 (def form-parser (m/parser ::form))
 (def form-unparser (m/unparser ::form))
+(def valid-form? (m/validator ::form))
 (def Form (m/schema ::form))
