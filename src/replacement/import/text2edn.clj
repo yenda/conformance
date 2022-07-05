@@ -32,9 +32,9 @@
   "Obtain the conformed and unformed versions of the given form or explain-data for its non-conformance."
   [form]
   (try
-    (let [pre-check (if malli?
-                      (data/valid-form? form)
-                      (s/valid? ::spec-data/form form))
+    (let [pre-check true #_(if malli?
+                             (data/valid-form? form)
+                             (s/valid? ::spec-data/form form))
           conformed (and pre-check (if malli?
                                      (data/form-parser form)
                                      (s/conform ::spec-data/form form)))]

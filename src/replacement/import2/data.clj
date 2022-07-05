@@ -399,7 +399,7 @@
                 [:fn-tail [:altn
                            [:arity-1 ::params+body]
                            [:arity-n [:catn
-                                      [:bodies [:+ ::params+body]]
+                                      [:bodies [:+ [:schema ::params+body]]]
                                       [:attr-map [:? map?]]]]]]]
 
                ::fn-args
@@ -410,7 +410,7 @@
                 [:fn-tail [:altn
                            [:arity-1 ::params+body]
                            [:arity-n [:catn
-                                      [:bodies [:+ ::params+body]]
+                                      [:bodies [:+ [:schema ::params+body]]]
                                       [:attr-map [:? map?]]]]]]]
                ::defn-form
                [:catn

@@ -9,6 +9,7 @@
    [replacement.import.persist-state :refer [form-tx-data]]
    [replacement.import.text2edn :as text2edn]
    [replacement.protocol.data :as data]
+   [replacement.import2.data :as data2]
    [xtdb.api :as xt-api]))
 
 (defn add-reference-data
